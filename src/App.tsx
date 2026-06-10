@@ -33,7 +33,7 @@ import {
   Info
 } from 'lucide-react';
 import { Employee, Payslip, AuditLog } from './types.js';
-import { formatCPF, cleanCPF, formatDate, formatCompetence, fileToBase64, getCompetenceOptions, addSignatureToPdf } from './utils.js';
+import { formatCPF, cleanCPF, formatDate, formatCompetence, fileToBase64, getCompetenceOptions, addSignatureToPdf, getDocumentLabels } from './utils.js';
 import SignatureCanvas from './components/SignatureCanvas.tsx';
 import PayslipViewer from './components/PayslipViewer.tsx';
 import FacialCapture from './components/FacialCapture.tsx';
@@ -166,11 +166,7 @@ export default function App() {
       const daysPending = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       
       const docType = p.documentType || 'holerite';
-      const documentTypeName = docType === 'ponto' 
-        ? 'Folha de Ponto' 
-        : docType === 'ferias' 
-          ? 'Recibo de Férias' 
-          : 'Holerite';
+      const documentTypeName = getDocumentLabels(docType).title;
 
       return {
         ...p,
@@ -422,6 +418,7 @@ export default function App() {
   // Document Download and Audit tracking log
   const handleTrackDownload = async (payslip: Payslip) => {
     try {
+      const documentLabels = getDocumentLabels(payslip.documentType);
       await fetch(`/api/payslips/${payslip.id}/download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -455,7 +452,8 @@ export default function App() {
             formatCompetence(payslip.competence),
             validationHash,
             timestampFormatted,
-            company.name
+            company.name,
+            payslip.documentType || 'holerite'
           );
           
           finalFileContent = signedPdfDataUri;
@@ -469,7 +467,7 @@ export default function App() {
       link.click();
       document.body.removeChild(link);
 
-      triggerToast('Download do holerite iniciado!', 'success');
+      triggerToast(`Download do ${documentLabels.lowerTitle} iniciado!`, 'success');
       if (user?.isAdmin) {
         fetchAdminData(); // Refresh admin logs
       }
@@ -612,8 +610,9 @@ export default function App() {
 
     try {
       let finalBase64 = uploadBase64;
+      const uploadLabels = getDocumentLabels(uploadDocType);
       const typeLabel = uploadDocType === 'ponto' ? 'folha_ponto' : uploadDocType === 'ferias' ? 'recibo_ferias' : 'holerite';
-      const fileTypeTitle = uploadDocType === 'ponto' ? 'Folha de Ponto' : uploadDocType === 'ferias' ? 'Recibo de Férias' : 'Holerite';
+      const fileTypeTitle = uploadLabels.title;
       let finalName = uploadFile ? uploadFile.name : `${typeLabel}_${cleanCPF(selectedEmployee.cpf)}_${uploadCompetence}.pdf`;
       let finalSize = uploadFile ? `${Math.round(uploadFile.size / 1024)} KB` : '182 KB';
 
@@ -1731,16 +1730,10 @@ export default function App() {
                                   };
 
                                   const getDocTypeBadge = (type?: string) => {
-                                    if (type === 'ponto') {
-                                      return (
-                                        <span className="text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 border border-purple-200 bg-purple-50 text-purple-700 rounded-full font-mono">
-                                          Ponto
-                                        </span>
-                                      );
-                                    }
+                                    const labels = getDocumentLabels(type);
                                     return (
-                                      <span className="text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 border border-blue-100 bg-blue-50 text-blue-700 rounded-full font-mono">
-                                        Holerite
+                                      <span className={`text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 border ${labels.badgeClass} rounded-full font-mono`}>
+                                        {labels.shortTitle}
                                       </span>
                                     );
                                   };
@@ -1783,7 +1776,7 @@ export default function App() {
                                               setUploadCompetence(pay.competence);
                                               setUploadDocType(pay.documentType || 'holerite');
                                               setUploadError('');
-                                              triggerToast(`Selecione o novo arquivo do ${pay.documentType === 'ponto' ? 'ponto' : 'holerite'} acima para substituir o arquivo correspondente.`, 'success');
+                                              triggerToast(`Selecione o novo arquivo do ${getDocumentLabels(pay.documentType).lowerTitle} acima para substituir o arquivo correspondente.`, 'success');
                                             }}
                                             title="Substituir PDF lançado em-place"
                                             className="p-1 text-slate-500 hover:text-indigo-700 hover:bg-slate-100 rounded transition cursor-pointer"
@@ -2222,16 +2215,10 @@ export default function App() {
                             const empCPF = getEmployeeCPF(pay.employeeId);
 
                             const getDocTypeBadge = (type?: string) => {
-                              if (type === 'ponto') {
-                                return (
-                                  <span className="text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 border border-purple-200 bg-purple-50 text-purple-700 rounded-full font-mono shrink-0">
-                                    Ponto
-                                  </span>
-                                );
-                              }
+                              const labels = getDocumentLabels(type);
                               return (
-                                <span className="text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 border border-blue-100 bg-blue-50 text-blue-700 rounded-full font-mono shrink-0">
-                                  Holerite
+                                <span className={`text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 border ${labels.badgeClass} rounded-full font-mono shrink-0`}>
+                                  {labels.shortTitle}
                                 </span>
                               );
                             };

@@ -212,12 +212,13 @@ async function handleReplacePayslip(id: string, body: any): Promise<ApiResponse>
     return json(404, { error: 'Documento nao encontrado.' });
   }
 
-  const { fileName, fileSize, fileContent } = body || {};
+  const { fileName, fileSize, fileContent, documentType } = body || {};
   const updated = await updatePayslip(id, {
     status: 'pendente',
     fileName: fileName || oldPayslip.fileName,
     fileSize: fileSize || oldPayslip.fileSize,
     fileContent: fileContent || oldPayslip.fileContent,
+    documentType: documentType || oldPayslip.documentType || 'holerite',
     uploadedAt: new Date().toISOString(),
     viewedAt: null,
     signedAt: null,
@@ -342,7 +343,7 @@ async function handleDownloadLog(id: string, body: any): Promise<ApiResponse> {
     'download',
     employeeId || payslip.employeeId,
     requesterName || payslip.employeeName,
-    `Baixou o PDF do holerite - ${payslip.competence}`,
+    `Baixou o PDF do ${documentTypeDescription(payslip.documentType)} - ${payslip.competence}`,
   );
 
   return json(200, { success: true });

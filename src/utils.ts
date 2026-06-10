@@ -5,6 +5,64 @@
 
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
+export type DocumentType = 'holerite' | 'ponto' | 'ferias';
+
+export interface DocumentLabels {
+  type: DocumentType;
+  title: string;
+  shortTitle: string;
+  lowerTitle: string;
+  receiptSubject: string;
+  legalObject: string;
+  headerTitle: string;
+  badgeClass: string;
+}
+
+export function normalizeDocumentType(type?: string): DocumentType {
+  return type === 'ponto' || type === 'ferias' ? type : 'holerite';
+}
+
+export function getDocumentLabels(type?: string): DocumentLabels {
+  const normalized = normalizeDocumentType(type);
+
+  if (normalized === 'ponto') {
+    return {
+      type: 'ponto',
+      title: 'Folha de Ponto',
+      shortTitle: 'Ponto',
+      lowerTitle: 'folha de ponto',
+      receiptSubject: 'a folha de ponto',
+      legalObject: 'esta folha de ponto',
+      headerTitle: 'FOLHA DE PONTO',
+      badgeClass: 'border-purple-200 bg-purple-50 text-purple-700',
+    };
+  }
+
+  if (normalized === 'ferias') {
+    return {
+      type: 'ferias',
+      title: 'Recibo de Férias',
+      shortTitle: 'Férias',
+      lowerTitle: 'recibo de férias',
+      receiptSubject: 'o recibo de férias',
+      legalObject: 'este recibo de férias',
+      headerTitle: 'RECIBO DE FERIAS',
+      badgeClass: 'border-teal-200 bg-teal-50 text-teal-700',
+    };
+  }
+
+  return {
+    type: 'holerite',
+    title: 'Holerite',
+    shortTitle: 'Holerite',
+    lowerTitle: 'holerite',
+    receiptSubject: 'o holerite de pagamento',
+    legalObject: 'este holerite',
+    headerTitle: 'HOLERITE',
+    badgeClass: 'border-blue-100 bg-blue-50 text-blue-700',
+  };
+}
+
 // Helper to format CPF as XXX.XXX.XXX-XX
 export function formatCPF(value: string): string {
   const clean = value.replace(/\D/g, '');
@@ -121,9 +179,11 @@ export async function addSignatureToPdf(
   competence: string,
   hash: string,
   timestamp: string,
-  companyName: string = 'ALFA LIX SERVIÇOS E TRANSPORTE'
+  companyName: string = 'ALFA LIX SERVIÇOS E TRANSPORTE',
+  documentType: DocumentType = 'holerite'
 ): Promise<string> {
   try {
+    const documentLabels = getDocumentLabels(documentType);
     // Decode external PDF content
     const cleanBase64 = base64Pdf.startsWith('data:') ? base64Pdf.split(',')[1] : base64Pdf;
     const pdfBytes = Uint8Array.from(atob(cleanBase64), c => c.charCodeAt(0));
@@ -165,7 +225,7 @@ export async function addSignatureToPdf(
       color: rgb(1, 1, 1),
     });
     
-    page.drawText('COMPROVANTE DE ENTREGA E ASSINATURA ELETRONICA DE HOLERITE', {
+    page.drawText(`COMPROVANTE DE ENTREGA E ASSINATURA ELETRONICA DE ${documentLabels.headerTitle}`, {
       x: 55,
       y: height - 102,
       size: 8.5,
@@ -198,7 +258,7 @@ export async function addSignatureToPdf(
     drawMeta('DOCUMENTO CPF:', employeeCPF, 360, height - 195);
     drawMeta('CARGO / FUNCAO:', employeeCargo, 50, height - 235);
     drawMeta('DEPARTAMENTO:', employeeDepto, 360, height - 235);
-    drawMeta('COMPETENCIA DO RECIBO:', competence, 50, height - 275);
+    drawMeta(`COMPETENCIA DO ${documentLabels.headerTitle}:`, competence, 50, height - 275);
     
     // 4. Section: Legal confirmation
     page.drawText('DECLARACAO E ACEITE DE RECEBIMENTO', {
@@ -217,9 +277,9 @@ export async function addSignatureToPdf(
     });
     
     const disclaimer = [
-      `Declaro e confirmo que recebi o holerite de pagamento referente a competencia de ${competence},`,
+      `Declaro e confirmo que recebi ${documentLabels.receiptSubject} referente a competencia de ${competence},`,
       `disponibilizado de forma integra e confidencial pelo portal eletronico de ${companyName}.`,
-      `Para todos os fins de direito e efeitos legais, valido e ratifico este recibo atraves de assinatura`,
+      `Para todos os fins de direito e efeitos legais, valido e ratifico ${documentLabels.legalObject} atraves de assinatura`,
       `eletronica em ambiente seguro provido de autenticacao, nos termos do art. 10 da MP n. 2.200-2/2001`,
       `e amparado pela Lei Federal n. 14.063/20.`
     ];
@@ -303,7 +363,7 @@ export async function addSignatureToPdf(
     }
     
     // 6. Security Footer text
-    page.drawText(`${cleanAccents(companyName).toUpperCase()} - PORTAL DE HOLERITES AUTENTICADOS - COMPLEMENTO DE ASSINATURA`, {
+    page.drawText(`${cleanAccents(companyName).toUpperCase()} - PORTAL DE DOCUMENTOS AUTENTICADOS - COMPLEMENTO DE ASSINATURA`, {
       x: 75,
       y: 40,
       size: 7.5,

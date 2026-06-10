@@ -355,6 +355,7 @@ export async function updatePayslip(
     fileName: string;
     fileSize: string;
     fileContent: string;
+    documentType: Payslip['documentType'];
     uploadedAt: string;
     viewedAt: string | null;
     signedAt: string | null;
@@ -368,6 +369,7 @@ export async function updatePayslip(
   if (updates.fileName !== undefined) row.file_name = updates.fileName;
   if (updates.fileSize !== undefined) row.file_size = updates.fileSize;
   if (updates.fileContent !== undefined) row.file_content = updates.fileContent;
+  if (updates.documentType !== undefined) row.document_type = updates.documentType;
   if (updates.uploadedAt !== undefined) row.uploaded_at = updates.uploadedAt;
   if (updates.viewedAt !== undefined) row.viewed_at = updates.viewedAt;
   if (updates.signedAt !== undefined) row.signed_at = updates.signedAt;

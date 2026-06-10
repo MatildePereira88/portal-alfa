@@ -19,7 +19,7 @@ import {
   ExternalLink 
 } from 'lucide-react';
 import { Employee, Payslip } from '../types.js';
-import { formatCPF, formatCompetence, formatDate } from '../utils.js';
+import { formatCPF, formatCompetence, formatDate, getDocumentLabels } from '../utils.js';
 
 interface PayslipViewerProps {
   payslip: Payslip;
@@ -29,6 +29,7 @@ interface PayslipViewerProps {
 
 export default function PayslipViewer({ payslip, employee, onDownload }: PayslipViewerProps) {
   const printRef = useRef<HTMLDivElement | null>(null);
+  const documentLabels = getDocumentLabels(payslip.documentType);
 
   // Parse initials from name for profile avatar
   const initials = useMemo(() => {
@@ -56,10 +57,10 @@ export default function PayslipViewer({ payslip, employee, onDownload }: Payslip
       {/* Top Banner Toolbar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-50 border border-slate-200/80 px-4 py-3 rounded-xl no-print shadow-sm">
         <div className="flex items-center gap-2">
-          <FileCheck className={`w-5 h-5 ${payslip.documentType === 'ponto' ? 'text-purple-600' : payslip.documentType === 'ferias' ? 'text-teal-600' : 'text-blue-600'}`} />
+          <FileCheck className={`w-5 h-5 ${documentLabels.type === 'ponto' ? 'text-purple-600' : documentLabels.type === 'ferias' ? 'text-teal-600' : 'text-blue-600'}`} />
           <div className="flex flex-col">
             <span className="font-bold text-slate-800 text-sm">
-              Visualização de {payslip.documentType === 'ponto' ? 'Folha de Ponto' : payslip.documentType === 'ferias' ? 'Recibo de Férias' : 'Holerite'} Escaneado
+              Visualização de {documentLabels.title} Escaneado
             </span>
             <span className="text-[10px] text-slate-500">Competência: {formatCompetence(payslip.competence)}</span>
           </div>
@@ -67,7 +68,7 @@ export default function PayslipViewer({ payslip, employee, onDownload }: Payslip
         <div className="flex gap-2 w-full sm:w-auto justify-end">
           <button
             onClick={handlePrint}
-            title="Imprimir Holerite e Termo"
+            title={`Imprimir ${documentLabels.title} e Termo`}
             className="flex items-center justify-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-lg shadow-sm transition active:scale-95 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
@@ -171,9 +172,9 @@ export default function PayslipViewer({ payslip, employee, onDownload }: Payslip
         <div className="mb-6 flex flex-col gap-2.5">
           <div className="flex justify-between items-center bg-slate-50 border border-slate-150 px-3 py-2 rounded-lg">
             <div className="flex items-center gap-2">
-              <FileText className={`w-4 h-4 ${payslip.documentType === 'ponto' ? 'text-purple-500' : payslip.documentType === 'ferias' ? 'text-teal-500' : 'text-red-500'}`} />
+              <FileText className={`w-4 h-4 ${documentLabels.type === 'ponto' ? 'text-purple-500' : documentLabels.type === 'ferias' ? 'text-teal-500' : 'text-red-500'}`} />
               <span className="font-bold text-xs text-slate-700">
-                Arquivo de {payslip.documentType === 'ponto' ? 'Folha de Ponto' : payslip.documentType === 'ferias' ? 'Recibo de Férias' : 'Holerite'} Disponibilizado: <strong className="font-mono text-[11px] text-slate-900 font-bold">{payslip.fileName}</strong> ({payslip.fileSize})
+                Arquivo de {documentLabels.title} Disponibilizado: <strong className="font-mono text-[11px] text-slate-900 font-bold">{payslip.fileName}</strong> ({payslip.fileSize})
               </span>
             </div>
             <a 
@@ -203,7 +204,7 @@ export default function PayslipViewer({ payslip, employee, onDownload }: Payslip
             )}
             
             <p className="text-[10px] text-slate-400 mt-2 text-center w-full no-print">
-              * O {payslip.documentType === 'ponto' ? 'documento de ponto' : payslip.documentType === 'ferias' ? 'recibo de férias' : 'holerite'} oficial é exibido diretamente do arquivo escaneado em PDF anexado pelo RH. Caso seu dispositivo bloqueie a reprodução em tela, utilize o botão "Baixar PDF" para salvá-lo localmente.
+              * O {documentLabels.lowerTitle} oficial é exibido diretamente do arquivo escaneado em PDF anexado pelo RH. Caso seu dispositivo bloqueie a reprodução em tela, utilize o botão "Baixar PDF" para salvá-lo localmente.
             </p>
           </div>
         </div>
@@ -222,7 +223,7 @@ export default function PayslipViewer({ payslip, employee, onDownload }: Payslip
                   <span>ASSINADO DIGITALMENTE</span>
                 </div>
                 <p className="text-[11px] leading-relaxed">
-                  Confirmo que recebi o {payslip.documentType === 'ponto' ? 'documento de folha de ponto correspondente' : payslip.documentType === 'ferias' ? 'recibo de férias correspondente' : 'holerite'} referente à competência de{' '}
+                  Confirmo que recebi {documentLabels.receiptSubject} referente à competência de{' '}
                   <strong className="text-slate-900">{formatCompetence(payslip.competence)}</strong>. 
                   A assinatura foi auditada, confirmada via ambiente seguro por senha do colaborador.
                 </p>
@@ -283,4 +284,3 @@ export default function PayslipViewer({ payslip, employee, onDownload }: Payslip
     </div>
   );
 }
-
