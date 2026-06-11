@@ -748,26 +748,17 @@ export default function App() {
 
   // Dynamic calculations for RH KPI Metrics row
   const adminKPIs = useMemo(() => {
-    const totalDocs = auditLogs.filter(l => l.type === 'upload' || l.type === 'replace').length; // or count from DB
-    
-    // We can also calculate actual numbers from db
-    const totalEmpCount = employees.length;
-    // Collect all loaded payslips reference
-    // Since express serves live db payloads, we can deduce status from overall logs or a general payload
-    // To make this robust, let's look at employeePayslips etc, or count statically from seeded DB context:
-    let totalPayslips = 0;
-    let signedPayslips = 0;
-    let pendingPayslips = 0;
-    
-    // Since we don't have general fetch-all API in typical client-only view, let's map using our UI items
-    // But since server.ts provides DB updates, we can also query '/api/payslips' to compute real ratios
+    const totalPayslips = allPayslips.length;
+    const signedPayslips = allPayslips.filter(p => p.status === 'assinado').length;
+    const pendingPayslips = allPayslips.filter(p => p.status !== 'assinado').length;
+
     return {
-      totalEmployees: totalEmpCount,
-      totalUploaded: 3 + (auditLogs.filter(l => l.type === 'upload').length - 2), // Seeds start at 3 + uploads
-      signedPercentage: 65, // Elegant mock fallback metric
-      pendingCount: 2
+      totalEmployees: employees.length,
+      totalUploaded: totalPayslips,
+      signedPercentage: totalPayslips > 0 ? Math.round((signedPayslips / totalPayslips) * 100) : 0,
+      pendingCount: pendingPayslips
     };
-  }, [employees, auditLogs, employeePayslips]);
+  }, [employees, allPayslips]);
 
   // Batch downloads logic
   const getEmployeeName = (empId: string) => {
@@ -1325,7 +1316,7 @@ export default function App() {
 
               <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm flex items-center justify-between">
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] uppercase font-extrabold text-slate-400">Holerites Lançados</span>
+                  <span className="text-[10px] uppercase font-extrabold text-slate-400">Documentos Lançados</span>
                   <span className="text-xl font-bold text-slate-800">{adminKPIs.totalUploaded}</span>
                 </div>
                 <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
